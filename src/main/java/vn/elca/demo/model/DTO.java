@@ -2,58 +2,37 @@ package vn.elca.demo.model;
 
 import one.microstream.reference.Lazy;
 
-import java.util.List;
-
 public class DTO {
-    private int numberOfGet = 0;
-    private long lastTouched = 0L;
-    private boolean loaded = false;
-    private long size = 0;
-    private Lazy<List<String>> listUserId;
+    private long numberOfUse = 0;
 
-    public DTO(Lazy<List<String>> listUserId) {
-        this.listUserId = listUserId;
+    private Lazy<User> user;
+
+    public DTO(Lazy<User> user) {
+        this.user = user;
     }
 
-    public int getNumberOfGet() {
-        return numberOfGet;
+    public DTO() {
     }
 
-    public void setNumberOfGet(int numberOfGet) {
-        this.numberOfGet = numberOfGet;
+    public Lazy<User> getLazyUser() {
+        return user;
     }
 
     public long getLastTouched() {
-        return lastTouched;
+        return user.lastTouched();
     }
 
-    public void setLastTouched(long lastTouched) {
-        this.lastTouched = lastTouched;
+    public User getUser() {
+        numberOfUse++;
+        return user.get();
     }
 
-    public boolean isLoaded() {
-        return loaded;
+    public void setUser(User user) {
+        this.user = Lazy.Reference(user);
     }
 
-    public void setLoaded(boolean loaded) {
-        this.loaded = loaded;
+    public long getNumberOfUse() {
+        return numberOfUse;
     }
 
-    public long getSize() {
-        return size;
-    }
-
-    public void setSize(long size) {
-        this.size = size;
-    }
-
-    public List<String> getListUserId() {
-        setNumberOfGet(this.numberOfGet++);
-        setLastTouched(System.currentTimeMillis());
-        return listUserId.get();
-    }
-
-    public void setListUserId(Lazy<List<String>> listUserId) {
-        this.listUserId = listUserId;
-    }
 }

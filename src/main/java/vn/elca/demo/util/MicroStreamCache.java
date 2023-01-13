@@ -106,9 +106,11 @@ public class MicroStreamCache {
 
     private List<String> findListKeyNotLoaded(List<String> list) {
         List<String> listRefLoadedInList = root.getMapDto().entrySet().stream()
-                .filter(map -> map.getValue().getLazyUser().isLoaded())
-                .filter(map -> list.contains(map.getKey()))
-                .map(Map.Entry::getValue).map(value -> value.getUser().getId()).collect(Collectors.toList());
+                                               .filter(map -> map.getValue().getLazyUser().isLoaded())
+                                               .filter(map -> list.contains(map.getKey()))
+                                               .map(Map.Entry::getValue)
+                                               .map(value -> value.getUser().getId())
+                                               .collect(Collectors.toList());
         return list.stream().filter(s -> !listRefLoadedInList.contains(s)).collect(Collectors.toList());
     }
 
@@ -149,17 +151,16 @@ public class MicroStreamCache {
     }
 
     public void cleanUp(List<String> listKey) {
-        Stream<DTO> dtoStream =
-                root.getMapDto().entrySet().stream()
-                        .filter(
-                                map -> !listKey.contains(map.getKey())
-                                        && map.getValue().getLazyUser().isLoaded())
-                        .map(Map.Entry::getValue);
+        Stream<DTO> dtoStream = root.getMapDto().entrySet().stream()
+                                    .filter(
+                                            map -> !listKey.contains(map.getKey())
+                                                   && map.getValue().getLazyUser().isLoaded())
+                                    .map(Map.Entry::getValue);
 
         if (MODE == CACHE_MODE.REFRESH_BY_LAST_ACCESS) {
             dtoStream
                     .sorted(
-                            Comparator.comparing(DTO::getLastTouched).reversed())
+                            Comparator.comparing(DTO::getLastTouched))
                     .limit(findListKeyNotLoaded(listKey).size())
                     .collect(Collectors.toList())
                     .forEach(dto -> Lazy.clear(dto.getLazyUser()));

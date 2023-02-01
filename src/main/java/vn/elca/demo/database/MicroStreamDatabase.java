@@ -1,22 +1,19 @@
 package vn.elca.demo.database;
 
-import one.microstream.afs.blobstore.types.BlobStoreFileSystem;
-import one.microstream.afs.redis.types.RedisConnector;
 import one.microstream.storage.embedded.configuration.types.EmbeddedStorageConfiguration;
-import one.microstream.storage.embedded.types.EmbeddedStorageFoundation;
 import one.microstream.storage.types.*;
 import vn.elca.demo.model.Root;
 
 import java.time.Duration;
 
-public class DB {
+public class MicroStreamDatabase {
     private static StorageManager INSTANCE = null;
 
-    private DB() {
+    private MicroStreamDatabase() {
     }
 
     private static StorageManager createStorageManager(Root root) {
-//        LazyReferenceManager a = LazyReferenceManager.set(LazyReferenceManager.New(
+//        LazyReferenceManager.set(LazyReferenceManager.New(
 //                Lazy.Checker(
 //                        Duration.ofMinutes(30).toMillis(), // timeout of lazy access
 //                        0.75                               // memory quota

@@ -5,15 +5,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Root {
 
-    private final Map<String, DTO> mapDto = new ConcurrentHashMap<>();
-    private final Map<String, ObjectDTO> mapIdRequestWithObjectDTO = new ConcurrentHashMap<>();
+    private final Map<String, Dto> mapDto = new ConcurrentHashMap<>();
+    private final Map<String, CacheDto> mapIdRequestWithCacheDto = new ConcurrentHashMap<>();
 
-    public Map<String, DTO> getMapDto() {
+    public Map<String, Dto> getMapDto() {
         return mapDto;
     }
 
-    public Map<String, ObjectDTO> getMapIdRequestWithObjectDTO() {
-        return mapIdRequestWithObjectDTO;
+    public Map<String, CacheDto> getMapIdRequestWithCacheDto() {
+        return mapIdRequestWithCacheDto;
     }
 
 }

@@ -74,7 +74,7 @@ public class UserService {
             user.setName(dbObject.get("name").toString());
 
             String id = user.getId();
-            if (id.equalsIgnoreCase("1") || id.equalsIgnoreCase("4") || id.equalsIgnoreCase("6")) {
+            if (id.equalsIgnoreCase("1") || id.equalsIgnoreCase("4") || id.equalsIgnoreCase("5")) {
                 user_list.add(user);
             }
         }

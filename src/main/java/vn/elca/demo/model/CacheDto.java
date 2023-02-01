@@ -4,11 +4,11 @@ import one.microstream.reference.Lazy;
 
 import java.util.List;
 
-public class ObjectDTO {
+public class CacheDto {
     private Type type;
     private Lazy<List<String>> listUserId;
 
-    public ObjectDTO(Lazy<List<String>> listUserId) {
+    public CacheDto(Lazy<List<String>> listUserId) {
         this.listUserId = listUserId;
     }
 

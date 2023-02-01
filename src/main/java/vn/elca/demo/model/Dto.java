@@ -2,16 +2,16 @@ package vn.elca.demo.model;
 
 import one.microstream.reference.Lazy;
 
-public class DTO {
+public class Dto {
     private long numberOfUse = 0;
 
     private Lazy<User> user;
 
-    public DTO(Lazy<User> user) {
+    public Dto(Lazy<User> user) {
         this.user = user;
     }
 
-    public DTO() {
+    public Dto() {
     }
 
     public Lazy<User> getLazyUser() {

@@ -199,6 +199,13 @@
             <artifactId>microstream-afs-redis</artifactId>
             <version>07.01.00-MS-GA</version>
         </dependency>
+
+        <dependency>
+            <groupId>one.microstream</groupId>
+            <artifactId>microstream-persistence-binary</artifactId>
+            <version>07.01.00-MS-GA</version>
+        </dependency>
+
         <!-- object size calculator lib -->
         <dependency>
             <groupId>com.google.guava</groupId>

@@ -1,194 +1,235 @@
 package vn.elca.demo.util;
 
-import one.microstream.persistence.types.PersistenceManager;
-import one.microstream.persistence.types.PersistenceObjectManager;
-import one.microstream.persistence.types.PersistenceStoring;
-import one.microstream.reference.Lazy;
-import one.microstream.reference.LazyReferenceManager;
 import one.microstream.storage.types.StorageManager;
-import org.springframework.data.annotation.Persistent;
+import org.springframework.stereotype.Service;
 import vn.elca.demo.database.MicroStreamDatabase;
-import vn.elca.demo.model.*;
+import vn.elca.demo.database.Root;
+import vn.elca.demo.model.Dto;
+import vn.elca.demo.model.InfoCache;
+import vn.elca.demo.model.InfoDto;
+import vn.elca.demo.model.Type;
 
 import java.util.*;
-import java.util.stream.Stream;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
+@Service
 public class MicroStreamCache {
 
-    private long MAX_MEMORY_CACHE = (long) (Runtime.getRuntime().totalMemory() * 0.8);
-    private CacheMode MODE = CacheMode.ALWAYS_REFRESH;
+    private final long MAX_MEMORY_CACHE = 536870912; // 512MB
+    private final long STABLE_USE_MEMORY = 15728640; // 15MB
+    private AtomicLong usageMemoryCache = new AtomicLong(STABLE_USE_MEMORY);
 
-    public static final StorageManager storageManager = MicroStreamDatabase.getInstance();
-    public static final Root root = MicroStreamDatabase.getRoot();
+    private static final StorageManager storageManager = MicroStreamDatabase.getInstance();
+    private static final Root root = MicroStreamDatabase.getRoot();
 
     private final Map<String, Dto> mapDto = root.getMapDto();
-    private final Map<String, CacheDto> mapIdRequestWithCacheDto = root.getMapIdRequestWithCacheDto();
+    private final Map<String, Set<Dto>> mapSetDto = root.getMapSetDto();
+    private final Map<String, List<Dto>> mapListDto = root.getMapListDto();
+    private final Map<String, InfoCache> mapInfoCache = root.getMapInfoCache();
+    private final Map<String, InfoDto> mapInfoDto = root.getMapInfoDto();
 
     public MicroStreamCache() {
     }
 
-    public MicroStreamCache(long MAX_MEMORY_CACHE) {
-        this.MAX_MEMORY_CACHE = MAX_MEMORY_CACHE;
+    public long getUsageMemoryCache() {
+        return usageMemoryCache.get();
     }
 
-    public MicroStreamCache(CacheMode MODE) {
-        this.MODE = MODE;
+    public void updateUsageMemoryCache() {
+
+        long beforeMemory = Runtime.getRuntime().freeMemory();
+        long start = System.currentTimeMillis();
+
+        this.usageMemoryCache.set(STABLE_USE_MEMORY + ObjectSizeCalculator.getObjectSize(root));
+
+        long afterMemory = Runtime.getRuntime().freeMemory();
+        long end = System.currentTimeMillis();
+
+        System.out.println("Time to update usage memory: " + (end - start) + "ms");
+        System.out.println("Memory used to update usage memory: " + (beforeMemory - afterMemory) + " bytes");
     }
 
-    public MicroStreamCache(long MAX_MEMORY_CACHE, CacheMode MODE) {
-        this.MAX_MEMORY_CACHE = MAX_MEMORY_CACHE;
-        this.MODE = MODE;
-    }
+    public void put(String cacheId, Object value) {
+        if (!mapInfoCache.containsKey(cacheId)) {
 
-    public long getMAX_MEMORY_CACHE() {
-        return MAX_MEMORY_CACHE;
-    }
+            long neededMemory = ObjectSizeCalculator.getObjectSize(value);
+            if (value instanceof Dto) {
+                Dto dto = (Dto) value;
+                if (mapInfoDto.containsKey(dto.getId())) {
+                    neededMemory = 0;
+                }
+            } else {
+                Collection<Dto> collection = (Collection<Dto>) value;
 
-    public CacheMode getMODE() {
-        return MODE;
-    }
-
-    private long getUsedMemory() {
-        return MAX_MEMORY_CACHE - Runtime.getRuntime().freeMemory();
-    }
-
-
-    public void put(String id, Object value) {
-        List<String> listUserId = new ArrayList<>();
-        if (!mapIdRequestWithCacheDto.containsKey(id)) {
-            if (value instanceof Collection) {
-                Collection<User> userCollection = (Collection<User>) value;
-                userCollection.forEach(user -> {
-                    if (!mapDto.containsKey(user.getId())) {
-                        Dto dto = new Dto();
-                        dto.setUser(user);
-                        mapDto.put(user.getId(), dto);
-                        storageManager.store(mapDto);
-                        Lazy.clear(dto.getLazyUser());
+                final long[] availableMemory = {0};
+                collection.stream().map(Dto::getId).forEach(dtoId -> {
+                    if (mapInfoDto.containsKey(dtoId)) {
+                        availableMemory[0] += ObjectSizeCalculator.getObjectSize(mapInfoDto.get(dtoId).getDto());
                     }
                 });
-                userCollection.stream().map(User::getId).forEach(listUserId::add);
-            } else {
-                User user = (User) value;
-                if (!mapDto.containsKey(user.getId())) {
-                    Dto dto = new Dto();
-                    dto.setUser(user);
-                    mapDto.put(user.getId(), dto);
-                    long objectId = storageManager.store(mapDto);
 
-                    Lazy.clear(dto.getLazyUser());
+                if ((getUsageMemoryCache() + neededMemory - availableMemory[0]) >= MAX_MEMORY_CACHE) {
+                    cleanUp(neededMemory);
                 }
-                listUserId.add(user.getId());
             }
-            CacheDto cacheDto = new CacheDto(Lazy.Reference(listUserId));
-            if (value instanceof Set) {
-                cacheDto.setType(Type.SET);
-            } else if (value instanceof List) {
-                cacheDto.setType(Type.LIST);
-            } else {
-                cacheDto.setType(Type.OBJECT);
-            }
-            mapIdRequestWithCacheDto.put(id, cacheDto);
 
-            storageManager.store(mapIdRequestWithCacheDto);
-            Lazy.clear(cacheDto.getListUserId());
+            if (value instanceof Set) {
+                mapInfoCache.put(cacheId, new InfoCache(Type.SET));
+
+                Set<Dto> setDto = (Set<Dto>) value;
+                setDto = setDto.stream().map(dto -> findReference(dto, cacheId)).collect(Collectors.toSet());
+
+
+                mapSetDto.put(cacheId, setDto);
+                storageManager.store(mapSetDto);
+
+            } else if (value instanceof List) {
+                mapInfoCache.put(cacheId, new InfoCache(Type.LIST));
+
+                List<Dto> listDto = (List<Dto>) value;
+
+                for (int i = 0; i < listDto.size(); i++) {
+                    Dto tempDto = findReference(listDto.get(i), cacheId);
+
+                    if (tempDto != listDto.get(i)) {
+                        listDto.set(i, tempDto);
+                    }
+                }
+
+                mapListDto.put(cacheId, listDto);
+                storageManager.store(mapListDto);
+
+            } else {
+                mapInfoCache.put(cacheId, new InfoCache(Type.OBJECT));
+                Dto dto = (Dto) value;
+
+                dto = findReference(dto, cacheId);
+
+                mapDto.put(cacheId, dto);
+                storageManager.store(mapDto);
+            }
+            storageManager.store(mapInfoCache);
+
+            updateUsageMemoryCache();
         }
+    }
+
+    private Dto findReference(Dto dto, String cacheId) {
+        String dtoId = dto.getId();
+
+        if (mapInfoDto.containsKey(dtoId)) {
+            InfoDto infoDto = mapInfoDto.get(dtoId);
+            infoDto.getListCacheId().add(cacheId);
+
+            storageManager.store(infoDto);
+            storageManager.store(mapInfoDto);
+
+            return infoDto.getDto();
+        }
+
+        InfoDto infoDto = new InfoDto();
+        infoDto.setDto(dto);
+        infoDto.getListCacheId().add(cacheId);
+
+        mapInfoDto.put(dtoId, infoDto);
+
+        storageManager.store(infoDto);
+        storageManager.store(mapInfoDto);
+
+        return dto;
     }
 
     public Object get(String id) {
-        CacheDto objectDTO = mapIdRequestWithCacheDto.get(id);
-        List<String> ids = objectDTO.getListUserId().get();
-        if (MODE == CacheMode.ALWAYS_REFRESH) {
-            if (objectDTO.getType() == Type.OBJECT) {
-                User user = mapDto.get(ids.get(0)).getUser();
-                cleanUp();
-                return user;
-            }
-            Collection<User> result;
-            if (objectDTO.getType() == Type.SET) {
-                result = new HashSet<>();
-                ids.forEach(tempId -> {
-                    result.add(mapDto.get(tempId).getUser());
-                });
-                cleanUp();
-                return result;
-            } else if (objectDTO.getType() == Type.LIST) {
-                result = new ArrayList<>();
-                ids.forEach(tempId -> {
-                    result.add(mapDto.get(tempId).getUser());
-                });
-                cleanUp();
-                return result;
-            }
-        } else {
-            if (objectDTO.getType() == Type.OBJECT) {
-                if (isFull()) {
-                    cleanUp(ids);
-                }
-                User user = mapDto.get(ids.get(0)).getUser();
-                Lazy.clear(objectDTO.getListUserId());
-                return user;
-            }
-            Collection<User> result;
-            if (objectDTO.getType() == Type.SET) {
-                result = new HashSet<>();
-                ids.forEach(tempId -> {
-                    if (isFull()) {
-                        cleanUp(ids);
-                    }
-                    result.add(mapDto.get(tempId).getUser());
-                });
-                Lazy.clear(objectDTO.getListUserId());
-                return result;
-            } else if (objectDTO.getType() == Type.LIST) {
-                result = new ArrayList<>();
-                ids.forEach(tempId -> {
-                    if (isFull()) {
-                        cleanUp(ids);
-                    }
-                    result.add(mapDto.get(tempId).getUser());
-                });
-                Lazy.clear(objectDTO.getListUserId());
-                return result;
+        if (mapInfoCache.containsKey(id)) {
+            InfoCache info = mapInfoCache.get(id);
+
+            info.setLastTouched(System.currentTimeMillis());
+            storageManager.store(info);
+
+
+            if (info.getType() == Type.LIST) {
+                return mapListDto.get(id);
+
+            } else if (info.getType() == Type.SET) {
+                return mapSetDto.get(id);
+
+            } else {
+                return mapDto.get(id);
             }
         }
-
         return null;
     }
 
-    private boolean isFull() {
-        return getUsedMemory() >= MAX_MEMORY_CACHE;
-    }
+    public void cleanUp(long neededMemory) {
+        List<String> listCacheId = mapInfoCache.entrySet()
+                                               .stream()
+                                               .sorted(Comparator.comparingLong(
+                                                       e -> e.getValue().getLastTouched())
+                                               )
+                                               .map(Map.Entry::getKey)
+                                               .collect(Collectors.toList());
 
-    public void cleanUp() {
-        LazyReferenceManager.get().iterate(lazyRef -> {
-            if (lazyRef.isLoaded()) {
-                lazyRef.clear();
+        for (String cacheId : listCacheId) {
+            InfoCache infoCache = mapInfoCache.get(cacheId);
+
+            if (infoCache.getType() == Type.SET) {
+                mapSetDto.get(cacheId)
+                         .stream()
+                         .map(Dto::getId)
+                         .forEach(dtoId -> {
+                             InfoDto infoDto = mapInfoDto.get(dtoId);
+                             infoDto.getListCacheId().remove(cacheId);
+                             if (infoDto.getListCacheId().size() == 0) {
+                                 mapInfoDto.remove(dtoId);
+                                 storageManager.store(mapInfoDto);
+                             }
+                         });
+
+                mapSetDto.remove(cacheId);
+                storageManager.store(mapSetDto);
+
+            } else if (infoCache.getType() == Type.LIST) {
+                mapListDto.get(cacheId)
+                          .stream()
+                          .map(Dto::getId)
+                          .forEach(dtoId -> {
+                              InfoDto infoDto = mapInfoDto.get(dtoId);
+                              infoDto.getListCacheId().remove(cacheId);
+                              if (infoDto.getListCacheId().size() == 0) {
+                                  mapInfoDto.remove(dtoId);
+                                  storageManager.store(mapInfoDto);
+                              }
+                          });
+
+                mapListDto.remove(cacheId);
+                storageManager.store(mapListDto);
+
+            } else {
+                String dtoId = mapDto.get(cacheId).getId();
+                InfoDto infoDto = mapInfoDto.get(dtoId);
+
+                infoDto.getListCacheId().remove(cacheId);
+                if (infoDto.getListCacheId().size() == 0) {
+                    mapInfoDto.remove(dtoId);
+                    storageManager.store(mapInfoDto);
+                }
+
+                mapDto.remove(cacheId);
+                storageManager.store(mapDto);
             }
-        });
-    }
 
-    public void cleanUp(List<String> listKey) {
-        // Stream DTO dùng để lọc ra các DTO không có trong list key cần load
-        Stream<Dto> dtoStream = mapDto
-                .entrySet()
-                .stream()
-                .filter(map -> (!listKey.contains(map.getKey())
-                                && map.getValue().getLazyUser().isLoaded()))
-                .map(Map.Entry::getValue);
+            mapInfoCache.remove(cacheId);
+            storageManager.store(mapInfoCache);
 
-        if (MODE == CacheMode.REFRESH_BY_LAST_ACCESS) {
-            dtoStream.min(Comparator.comparing(Dto::getLastTouched))
-                     .ifPresent(dto -> {
-                         Lazy.clear(dto.getLazyUser());
-                     });
-        } else if (MODE == CacheMode.REFRESH_BY_USELESS) {
-            dtoStream.min(Comparator.comparing(Dto::getNumberOfUse))
-                     .ifPresent(dto -> {
-                         Lazy.clear(dto.getLazyUser());
-                     });
+
+            long usageMemoryBeforeCleanUp = getUsageMemoryCache();
+            updateUsageMemoryCache();
+
+            if ((usageMemoryBeforeCleanUp - getUsageMemoryCache()) >= neededMemory) {
+                break;
+            }
         }
+
     }
-
-
 }

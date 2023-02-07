@@ -15,6 +15,6 @@ public class ApplicationInitializer extends AbstractAnnotationConfigDispatcherSe
 
     @Override
     protected String[] getServletMappings() {
-        return new String[] { "/user/*"};
+        return new String[] { "/*"};
     }
 }

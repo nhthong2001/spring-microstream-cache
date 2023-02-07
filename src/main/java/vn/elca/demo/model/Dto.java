@@ -1,38 +1,45 @@
 package vn.elca.demo.model;
 
-import one.microstream.reference.Lazy;
+import java.util.Objects;
 
 public class Dto {
-    private long numberOfUse = 0;
-
-    private Lazy<User> user;
-
-    public Dto(Lazy<User> user) {
-        this.user = user;
-    }
+    private String id;
+    private byte[] data;
 
     public Dto() {
     }
 
-    public Lazy<User> getLazyUser() {
-        return user;
+    public Dto(String id, byte[] video) {
+        this.id = id;
+        this.data = video;
     }
 
-    public long getLastTouched() {
-        return user.lastTouched();
+    public String getId() {
+        return id;
     }
 
-    public User getUser() {
-        numberOfUse++;
-        return user.get();
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setUser(User user) {
-        this.user = Lazy.Reference(user);
+    public byte[] getData() {
+        return data;
     }
 
-    public long getNumberOfUse() {
-        return numberOfUse;
+    public void setData(byte[] data) {
+        this.data = data;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Dto dto = (Dto) o;
+        return Objects.equals(id, dto.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

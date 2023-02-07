@@ -16,24 +16,19 @@ package vn.elca.demo.util;
 // limitations under the License.
 // =================================================================================================
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryPoolMXBean;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.*;
 
 /**
  * Contains utility methods for calculating the memory usage of objects. It
@@ -104,7 +99,7 @@ public class ObjectSizeCalculator {
      * and all other objects reachable from it.  Attempts to to detect the current JVM memory layout,
      * but may fail with {@link UnsupportedOperationException};
      *
-     * @param obj the object; can be null. Passing in a {@link java.lang.Class} object doesn't do
+     * @param obj the object; can be null. Passing in a {@link Class} object doesn't do
      *          anything special, it measures the size of all objects
      *          reachable through it (which will include its class loader, and by
      *          extension, all other Class objects loaded by
@@ -163,7 +158,7 @@ public class ObjectSizeCalculator {
      * Given an object, returns the total allocated size, in bytes, of the object
      * and all other objects reachable from it.
      *
-     * @param obj the object; can be null. Passing in a {@link java.lang.Class} object doesn't do
+     * @param obj the object; can be null. Passing in a {@link Class} object doesn't do
      *          anything special, it measures the size of all objects
      *          reachable through it (which will include its class loader, and by
      *          extension, all other Class objects loaded by

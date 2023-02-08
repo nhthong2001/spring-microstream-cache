@@ -18,6 +18,7 @@ public class MicroStreamCache {
 
     private final long MAX_MEMORY_CACHE = 536870912; // 512MB
     private final long STABLE_USE_MEMORY = 15728640; // 15MB
+
     private AtomicLong usageMemoryCache = new AtomicLong(STABLE_USE_MEMORY);
 
     private static final StorageManager storageManager = MicroStreamDatabase.getInstance();
@@ -38,22 +39,24 @@ public class MicroStreamCache {
 
     public void updateUsageMemoryCache() {
 
-        long beforeMemory = Runtime.getRuntime().freeMemory();
-        long start = System.currentTimeMillis();
+//        long beforeMemory = Runtime.getRuntime().freeMemory();
+//        long start = System.currentTimeMillis();
 
         this.usageMemoryCache.set(STABLE_USE_MEMORY + ObjectSizeCalculator.getObjectSize(root));
 
-        long afterMemory = Runtime.getRuntime().freeMemory();
-        long end = System.currentTimeMillis();
+//        long afterMemory = Runtime.getRuntime().freeMemory();
+//        long end = System.currentTimeMillis();
 
-        System.out.println("Time to update usage memory: " + (end - start) + "ms");
-        System.out.println("Memory used to update usage memory: " + (beforeMemory - afterMemory) + " bytes");
+//        System.out.println("Time to update usage memory: " + (end - start) + "ms");
+//        System.out.println("Memory used to update usage memory: " + (beforeMemory - afterMemory) + " bytes");
     }
 
-    public void put(String cacheId, Object value) {
+    public synchronized void put(String cacheId, Object value) {
         if (!mapInfoCache.containsKey(cacheId)) {
 
             long neededMemory = ObjectSizeCalculator.getObjectSize(value);
+            final long[] availableMemory = {0};
+
             if (value instanceof Dto) {
                 Dto dto = (Dto) value;
                 if (mapInfoDto.containsKey(dto.getId())) {
@@ -62,16 +65,15 @@ public class MicroStreamCache {
             } else {
                 Collection<Dto> collection = (Collection<Dto>) value;
 
-                final long[] availableMemory = {0};
                 collection.stream().map(Dto::getId).forEach(dtoId -> {
                     if (mapInfoDto.containsKey(dtoId)) {
                         availableMemory[0] += ObjectSizeCalculator.getObjectSize(mapInfoDto.get(dtoId).getDto());
                     }
                 });
 
-                if ((getUsageMemoryCache() + neededMemory - availableMemory[0]) >= MAX_MEMORY_CACHE) {
-                    cleanUp(neededMemory);
-                }
+            }
+            if ((getUsageMemoryCache() + neededMemory - availableMemory[0]) >= MAX_MEMORY_CACHE) {
+                cleanUp(neededMemory);
             }
 
             if (value instanceof Set) {
@@ -140,7 +142,7 @@ public class MicroStreamCache {
         return dto;
     }
 
-    public Object get(String id) {
+    public synchronized Object get(String id) {
         if (mapInfoCache.containsKey(id)) {
             InfoCache info = mapInfoCache.get(id);
 

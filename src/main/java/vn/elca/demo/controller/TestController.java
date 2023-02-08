@@ -3,10 +3,13 @@ package vn.elca.demo.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import vn.elca.demo.model.Dto;
 import vn.elca.demo.service.FakeDtoService;
 import vn.elca.demo.util.MicroStreamCache;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @RestController
 public class TestController {
@@ -16,29 +19,15 @@ public class TestController {
     @Autowired
     FakeDtoService dtoService;
 
-//    @GetMapping("add")
-//    public boolean add1() throws IOException {
-//        Dto dto1 = new Dto("1", Files.readAllBytes(Paths.get("D:/100MB.bin")));
-//        Dto dto2 = new Dto("2", Files.readAllBytes(Paths.get("D:/100MB-2.bin")));
-//        Dto dto3 = new Dto("3", Files.readAllBytes(Paths.get("D:/100MB-3.bin")));
-//
-//        List<Dto> list = new ArrayList<>();
-//        list.add(dto1);
-//        list.add(dto2);
-//
-//        Set<Dto> set = new HashSet<>();
-//        set.add(dto1);
-//        set.add(dto3);
-//
-//        cache.put("singleDto", dto1);
-//
-//        cache.put("set", set);
-//
-//        cache.put("list", list);
-//
-//        System.out.println("Cache successfully!");
-//        return true;
-//    }
+    @GetMapping("add")
+    public boolean add() throws IOException {
+
+        cache.put("test", new Dto("test", Files.readAllBytes(Paths.get("D:/Data/100MB-1.bin"))));
+
+
+        System.out.println("Cache successfully!");
+        return true;
+    }
 //
 //    @GetMapping("add/{id}")
 //    public boolean addTest(@PathVariable(name = "id") String id) throws IOException {
@@ -86,9 +75,9 @@ public class TestController {
             cache.put("list", dtoService.get("list"));
         };
 
-//        if (cache.get("something") == null) {
-//            cache.put("something", dtoService.get("something"));
-//        };
+        if (cache.get("something") == null) {
+            cache.put("something", dtoService.get("something"));
+        };
 
         long end = System.currentTimeMillis();
         System.out.println("Time to load all: " + (end - start) + "ms");

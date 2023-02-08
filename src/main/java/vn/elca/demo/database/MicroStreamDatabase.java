@@ -12,11 +12,7 @@ public class MicroStreamDatabase {
     }
 
     private static StorageManager createStorageManager(Root root) {
-//        LazyReferenceManager.set(LazyReferenceManager.New(
-//                Lazy.Checker(
-//                        Duration.ofMinutes(1).toMillis()
-//                )
-//        ));
+
         long start = System.currentTimeMillis();
         StorageManager result = EmbeddedStorageConfiguration.Builder()
                                                             .setStorageDirectory("data")

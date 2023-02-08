@@ -43,7 +43,7 @@ public class FakeDtoService {
             set.add(dto1);
             set.add(dto2);
 
-            Thread.sleep(2000);
+            Thread.sleep(1000);
             return set;
         }
 
@@ -52,7 +52,7 @@ public class FakeDtoService {
             list.add(dto1);
             list.add(dto3);
 
-            Thread.sleep(2000);
+            Thread.sleep(1000);
             return list;
         }
 
@@ -61,7 +61,7 @@ public class FakeDtoService {
         list.add(dto4);
         list.add(dto5);
 
-        Thread.sleep(2000);
+        Thread.sleep(1000);
         return list;
     }
 }

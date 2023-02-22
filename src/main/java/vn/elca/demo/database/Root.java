@@ -4,40 +4,39 @@ import vn.elca.demo.model.Dto;
 import vn.elca.demo.model.InfoCache;
 import vn.elca.demo.model.InfoDto;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Root {
 
-    private final Map<String, Dto> mapDto = new HashMap<>();
-    private final Map<String, Set<Dto>> mapSetDto = new HashMap<>();
-    private final Map<String, List<Dto>> mapListDto = new HashMap<>();
+    private final ConcurrentHashMap<String, Dto> mapDto = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<Dto>> mapSetDto = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, List<Dto>> mapListDto = new ConcurrentHashMap<>();
 
-    private final Map<String, InfoCache> mapInfoCache = new HashMap<>();
+    private final ConcurrentHashMap<String, InfoCache> mapInfoCache = new ConcurrentHashMap<>();
 
-    private final Map<String, InfoDto> mapInfoDto = new HashMap<>();
+    private final ConcurrentHashMap<String, InfoDto> mapInfoDto = new ConcurrentHashMap<>();
 
 
 
-    public Map<String, Dto> getMapDto() {
+    public ConcurrentHashMap<String, Dto> getMapDto() {
         return mapDto;
     }
 
-    public Map<String, Set<Dto>> getMapSetDto() {
+    public ConcurrentHashMap<String, Set<Dto>> getMapSetDto() {
         return mapSetDto;
     }
 
-    public Map<String, List<Dto>> getMapListDto() {
+    public ConcurrentHashMap<String, List<Dto>> getMapListDto() {
         return mapListDto;
     }
 
-    public Map<String, InfoCache> getMapInfoCache() {
+    public ConcurrentHashMap<String, InfoCache> getMapInfoCache() {
         return mapInfoCache;
     }
 
-    public Map<String, InfoDto> getMapInfoDto() {
+    public ConcurrentHashMap<String, InfoDto> getMapInfoDto() {
         return mapInfoDto;
     }
 }

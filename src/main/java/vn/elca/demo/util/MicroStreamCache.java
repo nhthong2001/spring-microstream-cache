@@ -10,25 +10,26 @@ import vn.elca.demo.model.InfoDto;
 import vn.elca.demo.model.Type;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Service
 public class MicroStreamCache {
 
-    private final long MAX_MEMORY_CACHE = 536870912; // 512MB
-    private final long STABLE_USE_MEMORY = 15728640; // 15MB
+    private final long MAX_MEMORY_CACHE = 536870912; // 512MB in bytes
+    private final long STABLE_USE_MEMORY = 15728640; // 15MB in bytes
 
     private AtomicLong usageMemoryCache = new AtomicLong(STABLE_USE_MEMORY);
 
     private static final StorageManager storageManager = MicroStreamDatabase.getInstance();
     private static final Root root = MicroStreamDatabase.getRoot();
 
-    private final Map<String, Dto> mapDto = root.getMapDto();
-    private final Map<String, Set<Dto>> mapSetDto = root.getMapSetDto();
-    private final Map<String, List<Dto>> mapListDto = root.getMapListDto();
-    private final Map<String, InfoCache> mapInfoCache = root.getMapInfoCache();
-    private final Map<String, InfoDto> mapInfoDto = root.getMapInfoDto();
+    private final ConcurrentHashMap<String, Dto> mapDto = root.getMapDto();
+    private final ConcurrentHashMap<String, Set<Dto>> mapSetDto = root.getMapSetDto();
+    private final ConcurrentHashMap<String, List<Dto>> mapListDto = root.getMapListDto();
+    private final ConcurrentHashMap<String, InfoCache> mapInfoCache = root.getMapInfoCache();
+    private final ConcurrentHashMap<String, InfoDto> mapInfoDto = root.getMapInfoDto();
 
     public MicroStreamCache() {
     }
@@ -51,6 +52,7 @@ public class MicroStreamCache {
 //        System.out.println("Memory used to update usage memory: " + (beforeMemory - afterMemory) + " bytes");
     }
 
+    // TODO: method used for test only
     public synchronized void put(String cacheId, Object value) {
         if (!mapInfoCache.containsKey(cacheId)) {
 
@@ -163,7 +165,7 @@ public class MicroStreamCache {
         return null;
     }
 
-    public void cleanUp(long neededMemory) {
+    private void cleanUp(long neededMemory) {
         List<String> listCacheId = mapInfoCache.entrySet()
                                                .stream()
                                                .sorted(Comparator.comparingLong(

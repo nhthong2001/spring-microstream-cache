@@ -2,119 +2,64 @@ package vn.elca.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-import vn.elca.demo.model.Dto;
-import vn.elca.demo.service.FakeDtoService;
+import vn.elca.demo.callable.CallableData;
+import vn.elca.demo.model.ShopAvailabilityData;
+import vn.elca.demo.model.enumType.ShopAvailabilityLevel;
+import vn.elca.demo.service.CacheService;
+import vn.elca.demo.service.ShopAvailabilityDataService;
 import vn.elca.demo.util.MicroStreamCache;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @RestController
 public class TestController {
-    @Autowired
-    MicroStreamCache cache;
 
     @Autowired
-    FakeDtoService dtoService;
+    CacheService cacheService;
 
-    @GetMapping("add")
-    public boolean add() throws IOException {
+    @Autowired
+    ShopAvailabilityDataService shopAvailabilityDataService;
 
-        cache.put("test", new Dto("test", Files.readAllBytes(Paths.get("D:/Data/100MB-1.bin"))));
-
-
-        System.out.println("Cache successfully!");
-        return true;
-    }
-//
-//    @GetMapping("add/{id}")
-//    public boolean addTest(@PathVariable(name = "id") String id) throws IOException {
-//        Dto dto3 = new Dto("3", Files.readAllBytes(Paths.get("D:/100MB.bin")));
-//        Dto dto4 = new Dto("4", Files.readAllBytes(Paths.get("D:/100MB-2.bin")));
-//        Dto dto5 = new Dto("5", Files.readAllBytes(Paths.get("D:/100MB-3.bin")));
-//
-//        List<Dto> list = new ArrayList<>();
-//        list.add(dto3);
-//        list.add(dto4);
-//        list.add(dto5);
-//
-//        cache.put("list" + id, list);
-//
-//        System.out.println("Cache successfully!");
-//        return true;
-//    }
-
-    @GetMapping("getAll")
-    public boolean getAll() throws IOException {
-
-        long start = System.currentTimeMillis();
-        cache.get("singleDto");
-        cache.get("set");
-        cache.get("list");
-        long end = System.currentTimeMillis();
-        System.out.println("Time to load all: " + (end - start) + "ms");
-
-        return true;
-
-    }
-    @GetMapping("getTest")
-    public Long getTest() throws InterruptedException {
-
-        long start = System.currentTimeMillis();
-        if (cache.get("singleDto") == null) {
-            cache.put("singleDto", dtoService.get("singleDto"));
-        };
-
-        if (cache.get("set") == null) {
-            cache.put("set", dtoService.get("set"));
-        };
-
-        if (cache.get("list") == null) {
-            cache.put("list", dtoService.get("list"));
-        };
-
-        if (cache.get("something") == null) {
-            cache.put("something", dtoService.get("something"));
-        };
-
-        long end = System.currentTimeMillis();
-        System.out.println("Time to load all: " + (end - start) + "ms");
-
-        return end - start;
-
-    }
-
-    @GetMapping("get1")
-    public boolean get1() {
-        long start = System.currentTimeMillis();
-        cache.get("singleDto");
-//        System.out.println("MicroStreamSerializer get size: " +MicroStreamSerializer.getSize(dto1));
-//        System.out.println("ObjectSizeCalculator get size: " + ObjectSizeCalculator.getObjectSize(dto1));
-
-        long end = System.currentTimeMillis();
-        System.out.println("Time to load dto 1: " + (end - start) + "ms");
-
-        return true;
-
-    }
-
-    @GetMapping("get2")
-    public boolean get2() {
-        long start = System.currentTimeMillis();
-        long end = System.currentTimeMillis();
-        System.out.println("Time to load dto 2: " + (end - start) + "ms");
-        cache.get("set");
+    @GetMapping("initData")
+    public boolean initData() {
+        shopAvailabilityDataService.initData();
         return true;
     }
 
-    @GetMapping("get3")
-    public boolean get3() {
-        long start = System.currentTimeMillis();
-        long end = System.currentTimeMillis();
-        System.out.println("Time to load dto 2: " + (end - start) + "ms");
-        cache.get("list");
-        return true;
+    @GetMapping("get/{id}")
+    public ShopAvailabilityData getById(@PathVariable Long id) {
+        ShopAvailabilityData result = cacheService.getProductAvailability(null, null, id);
+        return result;
     }
+
+    @GetMapping("putData")
+    public ShopAvailabilityData putData() throws InterruptedException {
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+
+        List<CallableData> callables = new ArrayList<>();
+        CallableData callableData;
+
+        long start = System.currentTimeMillis();
+        for (int i = 0; i <= 9; i++) {
+            callableData = new CallableData(cacheService, i * 100_000 + 1, i * 100_000 + 100_000);
+            callables.add(callableData);
+        }
+        executorService.invokeAll(callables);
+
+        long end = System.currentTimeMillis();
+
+        System.out.println("Time to push 1M data in ms: " + (end - start));
+
+        return null;
+    }
+
 }

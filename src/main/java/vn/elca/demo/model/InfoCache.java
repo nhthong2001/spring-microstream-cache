@@ -3,18 +3,23 @@ package vn.elca.demo.model;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class InfoCache {
-    private Type type;
-    private final AtomicLong lastTouched = new AtomicLong();
+    private Long shopAvailabilityDataId;
+    private final AtomicLong lastTouched = new AtomicLong(System.currentTimeMillis());
 
     public InfoCache() {
     }
 
-    public InfoCache(Type type) {
-        this.type = type;
+    public InfoCache(Long id) {
+        this.shopAvailabilityDataId = id;
     }
 
-    public Type getType() {
-        return type;
+    public Long getShopAvailabilityDataId() {
+
+        return shopAvailabilityDataId;
+    }
+
+    public void setShopAvailabilityDataId(Long shopAvailabilityDataId) {
+        this.shopAvailabilityDataId = shopAvailabilityDataId;
     }
 
     public long getLastTouched() {

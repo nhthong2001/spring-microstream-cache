@@ -4,10 +4,9 @@ import one.microstream.storage.types.StorageManager;
 import org.springframework.stereotype.Service;
 import vn.elca.demo.database.MicroStreamDatabase;
 import vn.elca.demo.database.Root;
-import vn.elca.demo.model.Dto;
 import vn.elca.demo.model.InfoCache;
-import vn.elca.demo.model.InfoDto;
-import vn.elca.demo.model.Type;
+import vn.elca.demo.model.Params;
+import vn.elca.demo.model.ShopAvailabilityData;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,11 +24,9 @@ public class MicroStreamCache {
     private static final StorageManager storageManager = MicroStreamDatabase.getInstance();
     private static final Root root = MicroStreamDatabase.getRoot();
 
-    private final ConcurrentHashMap<String, Dto> mapDto = root.getMapDto();
-    private final ConcurrentHashMap<String, Set<Dto>> mapSetDto = root.getMapSetDto();
-    private final ConcurrentHashMap<String, List<Dto>> mapListDto = root.getMapListDto();
-    private final ConcurrentHashMap<String, InfoCache> mapInfoCache = root.getMapInfoCache();
-    private final ConcurrentHashMap<String, InfoDto> mapInfoDto = root.getMapInfoDto();
+    private final ConcurrentHashMap<Long, ShopAvailabilityData> mapShopAvailabilityData = root.getMapShopAvailabilityData();
+    private final ConcurrentHashMap<Params, InfoCache> mapInfoCache = root.getMapInfoCache();
+    private final ConcurrentHashMap<Long, List<Params>> mapInfoData = root.getMapInfoData();
 
     public MicroStreamCache() {
     }
@@ -39,134 +36,94 @@ public class MicroStreamCache {
     }
 
     public void updateUsageMemoryCache() {
-
-//        long beforeMemory = Runtime.getRuntime().freeMemory();
-//        long start = System.currentTimeMillis();
-
         this.usageMemoryCache.set(STABLE_USE_MEMORY + ObjectSizeCalculator.getObjectSize(root));
-
-//        long afterMemory = Runtime.getRuntime().freeMemory();
-//        long end = System.currentTimeMillis();
-
-//        System.out.println("Time to update usage memory: " + (end - start) + "ms");
-//        System.out.println("Memory used to update usage memory: " + (beforeMemory - afterMemory) + " bytes");
     }
 
     // TODO: method used for test only
-    public synchronized void put(String cacheId, Object value) {
-        if (!mapInfoCache.containsKey(cacheId)) {
-
-            long neededMemory = ObjectSizeCalculator.getObjectSize(value);
-            final long[] availableMemory = {0};
-
-            if (value instanceof Dto) {
-                Dto dto = (Dto) value;
-                if (mapInfoDto.containsKey(dto.getId())) {
-                    neededMemory = 0;
-                }
-            } else {
-                Collection<Dto> collection = (Collection<Dto>) value;
-
-                collection.stream().map(Dto::getId).forEach(dtoId -> {
-                    if (mapInfoDto.containsKey(dtoId)) {
-                        availableMemory[0] += ObjectSizeCalculator.getObjectSize(mapInfoDto.get(dtoId).getDto());
-                    }
-                });
-
-            }
-            if ((getUsageMemoryCache() + neededMemory - availableMemory[0]) >= MAX_MEMORY_CACHE) {
-                cleanUp(neededMemory);
-            }
-
-            if (value instanceof Set) {
-                mapInfoCache.put(cacheId, new InfoCache(Type.SET));
-
-                Set<Dto> setDto = (Set<Dto>) value;
-                setDto = setDto.stream().map(dto -> findReference(dto, cacheId)).collect(Collectors.toSet());
-
-
-                mapSetDto.put(cacheId, setDto);
-                storageManager.store(mapSetDto);
-
-            } else if (value instanceof List) {
-                mapInfoCache.put(cacheId, new InfoCache(Type.LIST));
-
-                List<Dto> listDto = (List<Dto>) value;
-
-                for (int i = 0; i < listDto.size(); i++) {
-                    Dto tempDto = findReference(listDto.get(i), cacheId);
-
-                    if (tempDto != listDto.get(i)) {
-                        listDto.set(i, tempDto);
-                    }
-                }
-
-                mapListDto.put(cacheId, listDto);
-                storageManager.store(mapListDto);
-
-            } else {
-                mapInfoCache.put(cacheId, new InfoCache(Type.OBJECT));
-                Dto dto = (Dto) value;
-
-                dto = findReference(dto, cacheId);
-
-                mapDto.put(cacheId, dto);
-                storageManager.store(mapDto);
-            }
-            storageManager.store(mapInfoCache);
-
-            updateUsageMemoryCache();
+    public synchronized void put(Params params, ShopAvailabilityData shopAvailabilityData) {
+        long neededSize = ObjectSizeCalculator.getObjectSize(shopAvailabilityData);
+        if ((getUsageMemoryCache() + neededSize) > MAX_MEMORY_CACHE) {
+            cleanUp(neededSize);
         }
+
+        Long dataId = shopAvailabilityData.getId();
+
+        mapInfoCache.put(params, new InfoCache(dataId));
+        storageManager.store(mapInfoCache);
+
+
+        ShopAvailabilityData data = combineData(mapShopAvailabilityData.get(dataId), shopAvailabilityData);
+        storageManager.store(data);
+
+        mapShopAvailabilityData.put(dataId, data);
+        storageManager.store(mapShopAvailabilityData);
+
+        if (mapInfoData.containsKey(dataId)) {
+            mapInfoData.get(dataId).add(params);
+
+            storageManager.store(mapInfoData.get(dataId));
+        } else {
+            List<Params> paramsList = new ArrayList<>();
+            paramsList.add(params);
+            mapInfoData.put(dataId, paramsList);
+
+            storageManager.store(mapInfoData);
+        }
+
+
+
+        updateUsageMemoryCache();
     }
 
-    private Dto findReference(Dto dto, String cacheId) {
-        String dtoId = dto.getId();
+    private ShopAvailabilityData combineData(ShopAvailabilityData dataInCache, ShopAvailabilityData dataPut) {
+        if (dataInCache == null) {
+            return dataPut;
+        }
+        ShopAvailabilityData result = new ShopAvailabilityData();
 
-        if (mapInfoDto.containsKey(dtoId)) {
-            InfoDto infoDto = mapInfoDto.get(dtoId);
-            infoDto.getListCacheId().add(cacheId);
+//        result.setId(dataInCache.getId());
+        dataInCache.setLevel(Optional.ofNullable(dataInCache.getLevel())
+                                     .orElse(dataPut.getLevel()));
 
-            storageManager.store(infoDto);
-            storageManager.store(mapInfoDto);
+        dataInCache.setQuantity(Math.min(dataInCache.getQuantity(), dataPut.getQuantity()));
 
-            return infoDto.getDto();
+        if (dataPut.getQuota() != null) {
+            dataInCache.setQuota(Optional.ofNullable(dataInCache.getQuota())
+                                         .map(quota -> Math.min(quota, dataPut.getQuota()))
+                                         .orElse(dataPut.getQuota()));
         }
 
-        InfoDto infoDto = new InfoDto();
-        infoDto.setDto(dto);
-        infoDto.getListCacheId().add(cacheId);
+        if (dataPut.getCompQuota() != null) {
+            dataInCache.setCompQuota(Optional.ofNullable(dataInCache.getCompQuota())
+                                             .map(quota -> Math.min(quota, dataPut.getCompQuota()))
+                                             .orElse(dataPut.getCompQuota()));
+        }
 
-        mapInfoDto.put(dtoId, infoDto);
-
-        storageManager.store(infoDto);
-        storageManager.store(mapInfoDto);
-
-        return dto;
+        return dataInCache;
     }
 
-    public synchronized Object get(String id) {
-        if (mapInfoCache.containsKey(id)) {
-            InfoCache info = mapInfoCache.get(id);
+    public synchronized ShopAvailabilityData get(Params params) {
+        if (mapInfoCache.containsKey(params)) {
+            InfoCache infoCache = mapInfoCache.get(params);
+            infoCache.setLastTouched(System.currentTimeMillis());
+            Long shopAvailabilityDataId = infoCache.getShopAvailabilityDataId();
 
-            info.setLastTouched(System.currentTimeMillis());
-            storageManager.store(info);
+            ShopAvailabilityData result = mapShopAvailabilityData.get(shopAvailabilityDataId);
 
-
-            if (info.getType() == Type.LIST) {
-                return mapListDto.get(id);
-
-            } else if (info.getType() == Type.SET) {
-                return mapSetDto.get(id);
-
-            } else {
-                return mapDto.get(id);
+            if (result == null) {
+                mapInfoCache.remove(params);
+                storageManager.store(mapInfoCache);
             }
+            ;
+
+            return result;
         }
+
         return null;
     }
 
     private void cleanUp(long neededMemory) {
-        List<String> listCacheId = mapInfoCache.entrySet()
+        List<Params> paramsList = mapInfoCache.entrySet()
                                                .stream()
                                                .sorted(Comparator.comparingLong(
                                                        e -> e.getValue().getLastTouched())
@@ -174,57 +131,20 @@ public class MicroStreamCache {
                                                .map(Map.Entry::getKey)
                                                .collect(Collectors.toList());
 
-        for (String cacheId : listCacheId) {
-            InfoCache infoCache = mapInfoCache.get(cacheId);
+        for (Params params : paramsList) {
+            Long shopAvailabilityDataId = mapInfoCache.get(params).getShopAvailabilityDataId();
 
-            if (infoCache.getType() == Type.SET) {
-                mapSetDto.get(cacheId)
-                         .stream()
-                         .map(Dto::getId)
-                         .forEach(dtoId -> {
-                             InfoDto infoDto = mapInfoDto.get(dtoId);
-                             infoDto.getListCacheId().remove(cacheId);
-                             if (infoDto.getListCacheId().size() == 0) {
-                                 mapInfoDto.remove(dtoId);
-                                 storageManager.store(mapInfoDto);
-                             }
-                         });
+            mapShopAvailabilityData.remove(shopAvailabilityDataId);
+            storageManager.store(mapShopAvailabilityData);
 
-                mapSetDto.remove(cacheId);
-                storageManager.store(mapSetDto);
-
-            } else if (infoCache.getType() == Type.LIST) {
-                mapListDto.get(cacheId)
-                          .stream()
-                          .map(Dto::getId)
-                          .forEach(dtoId -> {
-                              InfoDto infoDto = mapInfoDto.get(dtoId);
-                              infoDto.getListCacheId().remove(cacheId);
-                              if (infoDto.getListCacheId().size() == 0) {
-                                  mapInfoDto.remove(dtoId);
-                                  storageManager.store(mapInfoDto);
-                              }
-                          });
-
-                mapListDto.remove(cacheId);
-                storageManager.store(mapListDto);
-
-            } else {
-                String dtoId = mapDto.get(cacheId).getId();
-                InfoDto infoDto = mapInfoDto.get(dtoId);
-
-                infoDto.getListCacheId().remove(cacheId);
-                if (infoDto.getListCacheId().size() == 0) {
-                    mapInfoDto.remove(dtoId);
-                    storageManager.store(mapInfoDto);
-                }
-
-                mapDto.remove(cacheId);
-                storageManager.store(mapDto);
+            // Delete all key in MapInfoCache have shopAvailabilityData
+            for (Params p : mapInfoData.get(shopAvailabilityDataId)) {
+                mapInfoCache.remove(p);
             }
-
-            mapInfoCache.remove(cacheId);
             storageManager.store(mapInfoCache);
+
+            mapInfoData.remove(shopAvailabilityDataId);
+            storageManager.store(mapInfoData);
 
 
             long usageMemoryBeforeCleanUp = getUsageMemoryCache();
@@ -236,4 +156,5 @@ public class MicroStreamCache {
         }
 
     }
+
 }

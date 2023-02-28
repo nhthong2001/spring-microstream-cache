@@ -15,7 +15,8 @@ public class MicroStreamDatabase {
 
         long start = System.currentTimeMillis();
         StorageManager result = EmbeddedStorageConfiguration.Builder()
-                                                            .setStorageDirectory("data-1M")
+                                                            .setStorageDirectory("data-test")
+                                                            .setChannelCount(4)
                                                             .setHousekeepingInterval(Duration.ofMillis(100))
                                                             .setHousekeepingTimeBudget(Duration.ofNanos(100000000))
                                                             .createEmbeddedStorageFoundation()

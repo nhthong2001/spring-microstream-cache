@@ -20,7 +20,7 @@ public class MicroStreamCache {
 
     private final long MAX_MEMORY_CACHE = 536870912; // 512MB in bytes
     private final long STABLE_USE_MEMORY = 15728640; // 15MB in bytes
-    private final long MEMORY_USE_FOR_STORED_EACH_OBJECT = 200; // 200 bytes
+    private final long MEMORY_USE_FOR_STORED_EACH_OBJECT = 230; // 230 bytes
 
     private AtomicLong usageMemoryCache = new AtomicLong(STABLE_USE_MEMORY);
 
@@ -43,6 +43,7 @@ public class MicroStreamCache {
         this.usageMemoryCache.set(STABLE_USE_MEMORY + ObjectSizeCalculator.getObjectSize(root)
                                   + getNumberOfObjectInRoot() * MEMORY_USE_FOR_STORED_EACH_OBJECT);
     }
+
     private long getNumberOfObjectInRoot() {
         long result = 0;
         result += mapShopAvailabilityData.size();
@@ -153,36 +154,35 @@ public class MicroStreamCache {
     }
 
     private void cleanUp(long neededMemory) {
-//        List<Params> paramsList = mapInfoCache.entrySet()
-//                                              .stream()
-//                                              .sorted(Comparator.comparingLong(
-//                                                      e -> e.getValue().getLastTouched())
-//                                              )
-//                                              .map(Map.Entry::getKey)
-//                                              .collect(Collectors.toList());
-//
-//        for (Params params : paramsList) {
-//            Long shopAvailabilityDataId = mapInfoCache.get(params).getShopAvailabilityDataId();
-//
-//            mapShopAvailabilityData.remove(shopAvailabilityDataId);
-//            storageManager.store(mapShopAvailabilityData);
-//
-//            // Delete all key in MapInfoCache have shopAvailabilityData
-//            for (Params p : mapInfoData.get(shopAvailabilityDataId)) {
-//                mapInfoCache.remove(p);
-//            }
-//            storageManager.store(mapInfoCache);
-//
-//            mapInfoData.remove(shopAvailabilityDataId);
-//            storageManager.store(mapInfoData);
-//
-//            updateUsageMemoryCache();
-//
-//            if (getUsageMemoryCache() + neededMemory < MAX_MEMORY_CACHE) {
-//                break;
-//            }
-//        }
+        List<Params> paramsList = mapInfoCache.entrySet()
+                                              .stream()
+                                              .sorted(Comparator.comparingLong(
+                                                      e -> e.getValue().getLastTouched())
+                                              )
+                                              .map(Map.Entry::getKey)
+                                              .collect(Collectors.toList());
 
+        for (Params params : paramsList) {
+            Long shopAvailabilityDataId = mapInfoCache.get(params).getShopAvailabilityDataId();
+
+            mapShopAvailabilityData.remove(shopAvailabilityDataId);
+            storageManager.store(mapShopAvailabilityData);
+
+            // Delete all key in MapInfoCache have shopAvailabilityData
+            for (Params p : mapInfoData.get(shopAvailabilityDataId)) {
+                mapInfoCache.remove(p);
+            }
+            storageManager.store(mapInfoCache);
+
+            mapInfoData.remove(shopAvailabilityDataId);
+            storageManager.store(mapInfoData);
+
+            updateUsageMemoryCache();
+
+            if (getUsageMemoryCache() + neededMemory < MAX_MEMORY_CACHE) {
+                break;
+            }
+        }
     }
 
 }

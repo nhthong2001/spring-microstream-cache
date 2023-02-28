@@ -10,8 +10,6 @@ import vn.elca.demo.model.Params;
 import vn.elca.demo.model.ShopAvailabilityData;
 import vn.elca.demo.util.MicroStreamCache;
 
-import java.util.Arrays;
-
 @Component
 @Aspect
 public class CacheAroundAspect {

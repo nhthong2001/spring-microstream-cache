@@ -39,7 +39,7 @@ public class TestController {
         System.out.println("Adding data...");
         long start = System.currentTimeMillis();
 
-        cacheService.init(1_000_000);
+        cacheService.init(10_000);
 
         long end = System.currentTimeMillis();
 

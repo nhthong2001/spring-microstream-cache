@@ -144,7 +144,8 @@ public class ShopAvailabilityData extends AbstractDto implements Comparable<Shop
 
     @Override
     public int compareTo(final ShopAvailabilityData o) {
-        return ordering.compare(this, o);
+//        return ordering.compare(this, o);
+        return 0;
     }
 
     @Override
@@ -170,6 +171,10 @@ public class ShopAvailabilityData extends AbstractDto implements Comparable<Shop
             return false;
         }
         final ShopAvailabilityData other = (ShopAvailabilityData) obj;
+        if (id != other.id) {
+            return false;
+        }
+
         if (level != other.level) {
             return false;
         }
@@ -193,24 +198,24 @@ public class ShopAvailabilityData extends AbstractDto implements Comparable<Shop
         return true;
     }
 
-    public static final Function<ShopAvailabilityData, ShopAvailabilityLevel> levelFunction =
-            new Function<ShopAvailabilityData, ShopAvailabilityLevel>() {
-                @Override
-                public ShopAvailabilityLevel apply(final ShopAvailabilityData input) {
-                    return input.getLevel();
-                }
-            };
-    public static final Function<ShopAvailabilityData, Long> quantityFunction =
-            new Function<ShopAvailabilityData, Long>() {
-                @Override
-                public Long apply(final ShopAvailabilityData input) {
-                    return Long.valueOf(input.getQuantity());
-                }
-            };
-
-    // quantity first, then level; so that (GOOD;200) < (LIMITED;500)
-    public static final Ordering<ShopAvailabilityData> ordering = Ordering.natural().onResultOf(quantityFunction)
-                                                                          .compound(Ordering.natural().onResultOf(levelFunction));
+//    public static final Function<ShopAvailabilityData, ShopAvailabilityLevel> levelFunction =
+//            new Function<ShopAvailabilityData, ShopAvailabilityLevel>() {
+//                @Override
+//                public ShopAvailabilityLevel apply(final ShopAvailabilityData input) {
+//                    return input.getLevel();
+//                }
+//            };
+//    public static final Function<ShopAvailabilityData, Long> quantityFunction =
+//            new Function<ShopAvailabilityData, Long>() {
+//                @Override
+//                public Long apply(final ShopAvailabilityData input) {
+//                    return Long.valueOf(input.getQuantity());
+//                }
+//            };
+//
+//    // quantity first, then level; so that (GOOD;200) < (LIMITED;500)
+//    public static final Ordering<ShopAvailabilityData> ordering = Ordering.natural().onResultOf(quantityFunction)
+//                                                                          .compound(Ordering.natural().onResultOf(levelFunction));
 
     /**
      * Adds the passed availabilities, i.e. adds the availability quantities and takes the "best" availability level.

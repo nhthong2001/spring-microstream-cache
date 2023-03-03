@@ -1,6 +1,8 @@
 package vn.elca.demo.model;
 
-public class AbstractDto {
+import java.io.Serializable;
+
+public class AbstractDto implements Serializable {
     protected long id;
 
     public AbstractDto() {

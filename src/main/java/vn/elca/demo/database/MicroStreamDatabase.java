@@ -13,7 +13,7 @@ public class MicroStreamDatabase {
 
     private static StorageManager createStorageManager(Root root) {
 
-        long start = System.currentTimeMillis();
+//        long start = System.currentTimeMillis();
         StorageManager result = EmbeddedStorageConfiguration.Builder()
                                                             .setStorageDirectory("data-test")
                                                             .setChannelCount(4)
@@ -21,9 +21,14 @@ public class MicroStreamDatabase {
                                                             .setHousekeepingTimeBudget(Duration.ofNanos(100000000))
                                                             .createEmbeddedStorageFoundation()
                                                             .createEmbeddedStorageManager(root).start();
-        long end = System.currentTimeMillis();
+//        long end = System.currentTimeMillis();
+//
+//        System.out.println("Time to load storage: " + (end - start) + "ms");
+        root.getMapData().clear();
+        root.getMapInfoCache().clear();
+        root.getMapInfoData().clear();
+        result.store(root);
 
-        System.out.println("Time to load storage: " + (end - start) + "ms");
         return result;
     }
 

@@ -1,4 +1,4 @@
-package vn.elca.demo.aop;
+package vn.elca.demo.model.annotation;
 
 public @interface CustomMicrostreamCached {
 }

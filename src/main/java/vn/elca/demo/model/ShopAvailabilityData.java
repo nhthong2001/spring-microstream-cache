@@ -1,7 +1,10 @@
 package vn.elca.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Function;
 import com.google.common.collect.Ordering;
+import vn.elca.demo.model.annotation.Cached;
+import vn.elca.demo.model.annotation.IgnoreCached;
 import vn.elca.demo.model.enumType.ShopAvailabilityLevel;
 
 
@@ -23,6 +26,11 @@ public class ShopAvailabilityData extends AbstractDto implements Comparable<Shop
     private long quantity;
     private Long quota; // in the case of UEFA: quota is for purchase seats only
     private Long compQuota; // specific for UEFA: Quota for complimentary seats
+
+    @Cached
+    @IgnoreCached
+    @JsonIgnore
+    private Product product;
 
     public ShopAvailabilityData() {
         this.id = 0;
@@ -57,7 +65,6 @@ public class ShopAvailabilityData extends AbstractDto implements Comparable<Shop
     }
 
 
-
     public ShopAvailabilityLevel getLevel() {
         return level;
     }
@@ -72,6 +79,15 @@ public class ShopAvailabilityData extends AbstractDto implements Comparable<Shop
      */
     public Long getQuota() {
         return quota;
+    }
+
+    @JsonIgnore
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
     }
 
     public boolean isVisible() {
@@ -93,6 +109,7 @@ public class ShopAvailabilityData extends AbstractDto implements Comparable<Shop
     public boolean hasCompQuota() {
         return compQuota != null && compQuota.longValue() > 0;
     }
+
 
 //    public static ShopAvailabilityData good(long quantity, Long quota) {
 //        return new ShopAvailabilityData(ShopAvailabilityLevel.GOOD, quantity, quota);
@@ -141,7 +158,6 @@ public class ShopAvailabilityData extends AbstractDto implements Comparable<Shop
 //        return new ShopAvailabilityData(min(Arrays.asList(avail1.level, avail2.level)), Math.min(avail1.quantity,
 //                                                                                                 avail2.quantity), quota);
 //    }
-
     @Override
     public int compareTo(final ShopAvailabilityData o) {
 //        return ordering.compare(this, o);
@@ -237,7 +253,6 @@ public class ShopAvailabilityData extends AbstractDto implements Comparable<Shop
 //            }
 //        };
 //    }
-
     public Long getCompQuota() {
         return compQuota;
     }

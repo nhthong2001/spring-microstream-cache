@@ -1,21 +1,24 @@
 package vn.elca.demo.model;
 
-import vn.elca.demo.model.annotation.Check;
+import vn.elca.demo.model.annotation.Cached;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class Product extends AbstractDto {
     private String name;
     private long quantity;
     private Long quota;
 
-    @Check
-    private ShopAvailabilityData shopAvailabilityData;
+    @Cached
+    private List<ShopAvailabilityData> shopAvailabilityData;
 
     public Product() {
     }
 
-    public Product(long id, String name, long quantity, Long quota, ShopAvailabilityData shopAvailabilityData) {
+    public Product(long id, String name, long quantity, Long quota, List<ShopAvailabilityData> shopAvailabilityData) {
         this.id = id;
         this.name = name;
         this.quantity = quantity;
@@ -47,12 +50,8 @@ public class Product extends AbstractDto {
         this.quota = quota;
     }
 
-    public ShopAvailabilityData getShopAvailabilityData() {
+    public List<ShopAvailabilityData> getShopAvailabilityData() {
         return shopAvailabilityData;
-    }
-
-    public void setShopAvailabilityData(ShopAvailabilityData shopAvailabilityData) {
-        this.shopAvailabilityData = shopAvailabilityData;
     }
 
     @Override

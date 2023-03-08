@@ -13,15 +13,9 @@ import java.util.*;
 
 @Service
 public class DemoService {
-//    @Autowired
-//    MicroStreamCache cache;
 
     @Autowired
     ShopAvailabilityDataService shopAvailabilityDataService;
-
-//    public void init(int numberOfObject) {
-//        cache.initDB(numberOfObject);
-//    }
 
     @CustomMicrostreamCached
     public ShopAvailabilityData getProductAvailability(Long advantageId, Long composedProductId, long productId) {
@@ -39,6 +33,13 @@ public class DemoService {
                                                        Long composedProductId, long productId) {
         // Xử lí logic lấy ra ShopAvailabilityData
         ShopAvailabilityData shopAvailabilityData = shopAvailabilityDataService.findShopAvailabilityDataById(productId);
+//        ShopAvailabilityData shopAvailabilityData2 = shopAvailabilityDataService.findShopAvailabilityDataById(productId + 1);
+//        List<ShopAvailabilityData> list = new ArrayList<>();
+//        list.add(shopAvailabilityData);
+//        list.add(shopAvailabilityData2);
+//
+//        Product product = new Product(1, "Product " + 1, 1, 2L, list);
+//        shopAvailabilityData.setProduct(product);
 
         return shopAvailabilityData;
     }
@@ -53,17 +54,27 @@ public class DemoService {
     @CustomMicrostreamCached
     public Product getProductDetail(Long productId) {
         // Xử lí logic trả ra product
-        ShopAvailabilityData shopAvailabilityData = new ShopAvailabilityData(1, ShopAvailabilityLevel.GOOD, 0, null, null);
+        ShopAvailabilityData shopAvailabilityData1 = new ShopAvailabilityData(1, ShopAvailabilityLevel.GOOD, 0, null, null);
+        ShopAvailabilityData shopAvailabilityData2 = new ShopAvailabilityData(2, ShopAvailabilityLevel.GOOD, 0, null, null);
+        ShopAvailabilityData shopAvailabilityData3 = new ShopAvailabilityData(3, ShopAvailabilityLevel.GOOD, 0, null, null);
+        ShopAvailabilityData shopAvailabilityData4 = new ShopAvailabilityData(4, ShopAvailabilityLevel.GOOD, 0, null, null);
+        List<ShopAvailabilityData> list = new ArrayList<>();
+        list.add(shopAvailabilityData1);
+        list.add(shopAvailabilityData2);
+        list.add(shopAvailabilityData3);
+        list.add(shopAvailabilityData4);
+
         Product product = new Product(productId, "Product " + productId, productId, productId * 2,
-                                      shopAvailabilityData);
+                                      list);
         return product;
     }
 
     @CustomMicrostreamCached
     public List<Product> getListProduct() {
         List<Product> products = new ArrayList<>();
-        for (int i = 50; i <= 150; i++) {
-            products.add(new Product(i, "Product " + i, 0, null, null));
+        for (int i = 1; i <= 10; i++) {
+            ShopAvailabilityData shopAvailabilityData = shopAvailabilityDataService.findShopAvailabilityDataById((long) i);
+            products.add(new Product(i, "Product " + i, 0, null, Collections.singletonList(shopAvailabilityData)));
         }
         return products;
     }
@@ -72,23 +83,25 @@ public class DemoService {
     public Set<ShopAvailabilityData> getSetShopAvailabilityData() {
         Set<ShopAvailabilityData> shopAvailabilityDataHashSet = new HashSet<>();
         for (long i = 1; i < 5; i++) {
-            shopAvailabilityDataHashSet.add(shopAvailabilityDataService.findShopAvailabilityDataById(i));
+            ShopAvailabilityData shopAvailabilityData = new ShopAvailabilityData(i, ShopAvailabilityLevel.GOOD,
+                                                                                 0, null, null);
+            shopAvailabilityDataHashSet.add(shopAvailabilityData);
         }
         return shopAvailabilityDataHashSet;
     }
 
-//    @CustomMicrostreamCached
-//    public Map<Long, ShopAvailabilityData> getPerformanceAvailability(Long advantageId, Long composedProductId,
-//                                                                      long eventId, Collection<Long> performanceIds,
-//                                                                      float eventAlertRatio,
-//                                                                      Multimap<Long, Long> allowedSeatCategoriesPerPerformance,
-//                                                                      Collection<CachedAreaBlockAvailability> preloadedAreaBlockAvailabilities) {
-//        Map<Long, ShopAvailabilityData> shopAvailabilityDataHashMap = new HashMap<>();
-//        for (long i = 1; i < 5; i++) {
-//            shopAvailabilityDataHashMap.put(i, shopAvailabilityDataService.findShopAvailabilityDataById(i));
-//        }
-//        return shopAvailabilityDataHashMap;
-//    }
+    @CustomMicrostreamCached
+    public Map<Long, ShopAvailabilityData> getPerformanceAvailability(Long advantageId, Long composedProductId,
+                                                                      long eventId, Collection<Long> performanceIds,
+                                                                      float eventAlertRatio,
+                                                                      Multimap<Long, Long> allowedSeatCategoriesPerPerformance,
+                                                                      Collection<CachedAreaBlockAvailability> preloadedAreaBlockAvailabilities) {
+        Map<Long, ShopAvailabilityData> shopAvailabilityDataHashMap = new HashMap<>();
+        for (long i = 1; i < 5; i++) {
+            shopAvailabilityDataHashMap.put(i * 10, shopAvailabilityDataService.findShopAvailabilityDataById(i));
+        }
+        return shopAvailabilityDataHashMap;
+    }
 
 
 }

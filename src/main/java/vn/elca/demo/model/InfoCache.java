@@ -3,14 +3,22 @@ package vn.elca.demo.model;
 import vn.elca.demo.model.enumType.DataStructure;
 import vn.elca.demo.model.enumType.DataType;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class InfoCache {
     private DataStructure dataStructure;
     private DataType dataType;
-    private List<Long> listDtoId = new ArrayList<>();
+    /*
+    * key: dtoId
+    *
+    * value: dataStructure == Map ? key of data in Map : null
+    *
+    * use list key of map as a list dtoId of a param
+    * */
+    private Map<Long, Long> dtoIdMap = new HashMap<>();
+
     private final AtomicLong lastTouched = new AtomicLong(System.currentTimeMillis());
 
     public InfoCache() {
@@ -37,12 +45,12 @@ public class InfoCache {
         this.dataType = dataType;
     }
 
-    public List<Long> getListDtoId() {
-        return listDtoId;
+    public Map<Long, Long> getDtoIdMap() {
+        return dtoIdMap;
     }
 
-    public void setListDtoId(List<Long> listDtoId) {
-        this.listDtoId = listDtoId;
+    public void setDtoIdMap(Map<Long, Long> dtoIdMap) {
+        this.dtoIdMap = dtoIdMap;
     }
 
     public long getLastTouched() {

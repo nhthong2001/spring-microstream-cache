@@ -104,4 +104,26 @@ public class DemoService {
     }
 
 
+    // Demo
+
+    @CustomMicrostreamCached
+    public List<ShopAvailabilityData> getListShopAvailabilityData(long from, long to) {
+        List<ShopAvailabilityData> result = new ArrayList<>();
+        for (long i = from; i <= to ; i++) {
+            result.add(shopAvailabilityDataService.findShopAvailabilityDataById(i));
+        }
+        return result;
+    }
+
+
+    @CustomMicrostreamCached
+    public List<ShopAvailabilityData> getAllShopAvailabilityData() {
+        return shopAvailabilityDataService.getAll();
+    }
+
+    @CustomMicrostreamCached
+    public ShopAvailabilityData getShopAvailabilityDataById(long id) {
+        ShopAvailabilityData result = shopAvailabilityDataService.findShopAvailabilityDataById(id);
+        return result;
+    }
 }

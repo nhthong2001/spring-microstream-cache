@@ -28,13 +28,13 @@ import java.util.stream.Stream;
 @Service
 public class MicroStreamCache {
     private final long MAX_MEMORY_CACHE = 536_870_912; // 512MB in bytes
-    private final long STABLE_USE_MEMORY = 15_728_640; // 15MB in bytes
-    private final long MEMORY_USE_FOR_STORED_EACH_OBJECT = 230; // in bytes
+//    private final long STABLE_USE_MEMORY = 15_728_640; // 15MB in bytes
+//    private final long MEMORY_USE_FOR_STORED_EACH_OBJECT = 230; // in bytes
 
-    private AtomicLong usageMemoryCache = new AtomicLong(STABLE_USE_MEMORY);
+    private AtomicLong usageMemoryCache = new AtomicLong(0);
 
-    private static final StorageManager storageManager = MicroStreamDatabase.getInstance();
-    private static final Root root = MicroStreamDatabase.getRoot();
+//    private static final StorageManager storageManager = MicroStreamDatabase.getInstance();
+    private static final Root root = new Root();
 
     private final ConcurrentHashMap<String, AbstractDto> mapData = root.getMapData();
     private final ConcurrentHashMap<Params, InfoCache> mapInfoCache = root.getMapInfoCache();
@@ -44,7 +44,7 @@ public class MicroStreamCache {
 //        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 //
 //        Runnable cleanUpRunnable = this::houseKeepingProcess;
-//        executor.scheduleAtFixedRate(cleanUpRunnable, 0, 1, TimeUnit.SECONDS);
+//        executor.scheduleAtFixedRate(cleanUpRunnable, 0, 10, TimeUnit.SECONDS);
     }
 
     private synchronized long getUsageMemoryCache() {
@@ -52,17 +52,16 @@ public class MicroStreamCache {
     }
 
     private synchronized void updateUsageMemoryCache() {
-        this.usageMemoryCache.set(STABLE_USE_MEMORY + ObjectSizeCalculator.getObjectSize(root)
-                                  + getNumberOfObjectInRoot() * MEMORY_USE_FOR_STORED_EACH_OBJECT);
+        this.usageMemoryCache.set(ObjectSizeCalculator.getObjectSize(root));
     }
 
-    private long getNumberOfObjectInRoot() {
-        long result = 0;
-        result += mapData.size();
-        result += mapInfoCache.size();
-        result += mapInfoData.size();
-        return result * 2;
-    }
+//    private long getNumberOfObjectInRoot() {
+//        long result = 0;
+//        result += mapData.size();
+//        result += mapInfoCache.size();
+//        result += mapInfoData.size();
+//        return result * 2;
+//    }
 
     public void put(Params params, Object value) {
         DataStructure dataStructure;
@@ -93,7 +92,7 @@ public class MicroStreamCache {
 
         InfoCache infoCache = new InfoCache(dataStructure, dataType);
         mapInfoCache.put(params, infoCache);
-        storageManager.store(mapInfoCache);
+//        storageManager.store(mapInfoCache);
 
         if (dataStructure == DataStructure.SINGLE_OBJECT) {
             AbstractDto temp = (AbstractDto) value;
@@ -114,6 +113,7 @@ public class MicroStreamCache {
                 infoCache.getDtoIdMap().put(temp.getId(), null);
             }
         }
+//        houseKeepingProcess();
     }
 
     private void putDataIntoCache(Params params, AbstractDto dto, DataType dataType, DataStructure dataStructure) {
@@ -129,12 +129,12 @@ public class MicroStreamCache {
             if (!mapInfoData.get(dataId).contains(params)) {
                 mapInfoData.get(dataId).add(params);
             }
-            storageManager.store(mapInfoData.get(dataId));
+//            storageManager.store(mapInfoData.get(dataId));
         } else {
             List<Params> paramsList = new ArrayList<>();
             paramsList.add(params);
             mapInfoData.put(dataId, paramsList);
-            storageManager.store(mapInfoData);
+//            storageManager.store(mapInfoData);
         }
     }
 
@@ -142,9 +142,9 @@ public class MicroStreamCache {
         AbstractDto data = mergeObjects(mapData.get(dataId), dto);
         if (data == dto) { // is true if dto not existed in mapData
             mapData.put(dataId, data);
-            storageManager.store(mapData);
+//            storageManager.store(mapData);
         } else {
-            storageManager.store(data);
+//            storageManager.store(data);
         }
         List<Field> cachedField = FieldUtils.getFieldsListWithAnnotation(data.getClass(), Cached.class);
         List<Field> ignoreField = FieldUtils.getFieldsListWithAnnotation(data.getClass(), IgnoreCached.class);
@@ -203,9 +203,9 @@ public class MicroStreamCache {
                                     AbstractDto tempData = mergeObjects(mapData.get(insideDataId), insideDto);
                                     if (tempData == insideDto) { // is true if inside not existed in mapData
                                         mapData.put(insideDataId, tempData);
-                                        storageManager.store(mapData);
+//                                        storageManager.store(mapData);
                                     } else {
-                                        storageManager.store(tempData);
+//                                        storageManager.store(tempData);
                                     }
                                 });
 
@@ -217,9 +217,9 @@ public class MicroStreamCache {
                                     AbstractDto tempData = mergeObjects(mapData.get(insideDataId), insideDto);
                                     if (tempData == insideDto) { // is true if inside not existed in mapData
                                         mapData.put(insideDataId, tempData);
-                                        storageManager.store(mapData);
+//                                        storageManager.store(mapData);
                                     } else {
-                                        storageManager.store(tempData);
+//                                        storageManager.store(tempData);
                                     }
                                 }
                             } else { // instance of single object
@@ -228,9 +228,9 @@ public class MicroStreamCache {
                                 AbstractDto tempData = mergeObjects(mapData.get(insideDataId), insideDto);
                                 if (tempData == insideDto) { // is true if dto not existed in mapData
                                     mapData.put(insideDataId, tempData);
-                                    storageManager.store(mapData);
+//                                    storageManager.store(mapData);
                                 } else {
-                                    storageManager.store(tempData);
+//                                    storageManager.store(tempData);
                                 }
                             }
                         }
@@ -320,8 +320,9 @@ public class MicroStreamCache {
         return null;
     }
 
-    public synchronized void houseKeepingProcess() {
+    private void houseKeepingProcess() {
         updateUsageMemoryCache();
+        System.out.println(getUsageMemoryCache());
         if (getUsageMemoryCache() > MAX_MEMORY_CACHE) {
             List<Params> paramsList = mapInfoCache.entrySet()
                                                   .stream()
@@ -346,9 +347,9 @@ public class MicroStreamCache {
 
                     mapInfoData.remove(dataId);
                 });
-                storageManager.store(mapData);
-                storageManager.store(mapInfoCache);
-                storageManager.store(mapInfoData);
+//                storageManager.store(mapData);
+//                storageManager.store(mapInfoCache);
+//                storageManager.store(mapInfoData);
 
                 updateUsageMemoryCache();
 

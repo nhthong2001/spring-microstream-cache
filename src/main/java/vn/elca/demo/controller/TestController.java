@@ -1,11 +1,13 @@
 package vn.elca.demo.controller;
 
+import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import vn.elca.demo.model.Product;
 import vn.elca.demo.model.ShopAvailabilityData;
+import vn.elca.demo.model.annotation.CustomMicrostreamCached;
 import vn.elca.demo.service.DemoService;
 
 import java.util.List;
@@ -55,6 +57,8 @@ public class TestController {
         return result;
     }
 
+
+
     @GetMapping("getPerformanceAvailability")
     public Map<Long, ShopAvailabilityData> getPerformanceAvailability() {
         Map<Long, ShopAvailabilityData> result = demoService.getPerformanceAvailability(null,
@@ -83,5 +87,28 @@ public class TestController {
 
         return null;
     }
+
+    // DEMO
+    @GetMapping("getShopAvailabilityDataById/{id}")
+    public ShopAvailabilityData getShopAvailabilityDataById(@PathVariable long id) {
+        ShopAvailabilityData result = demoService.getShopAvailabilityDataById(id);
+        return result;
+    }
+
+    @GetMapping("getAll")
+    public List<ShopAvailabilityData> getAll() {
+        List<ShopAvailabilityData> result = demoService.getAllShopAvailabilityData();
+        return result;
+    }
+
+    @GetMapping("getListShopAvailabilityData")
+    public List<ShopAvailabilityData> getListShopAvailabilityData(@Param("from") long from, @Param("to") long to) {
+        List<ShopAvailabilityData> result = demoService.getListShopAvailabilityData(from, to);
+        return result;
+    }
+
+
+
+
 
 }

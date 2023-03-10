@@ -67,23 +67,24 @@ public class ShopAvailabilityDataService {
 
     // Fetching a single shopAvailabilityData details from the mongo database.
     public ShopAvailabilityData findShopAvailabilityDataById(Long id) {
-        ShopAvailabilityData shopAvailabilityData = new ShopAvailabilityData(id, ShopAvailabilityLevel.GOOD,
-                                                                             1000, 10L, 5L);
-//        DBCollection coll = MongoFactory.getCollection(db_name, db_collection);
-//
-//        // Fetching the record object from the mongo database.
-//        DBObject where_query = new BasicDBObject();
-//        where_query.put("id", id);
-//
-//        DBObject dbo = coll.findOne(where_query);
-//        System.out.println("Mongo query: " + where_query);
-//        shopAvailabilityData.setId((Long) dbo.get("id"));
-//        shopAvailabilityData.setLevel(ShopAvailabilityLevel.valueOf(dbo.get("level").toString()));
-//        shopAvailabilityData.setQuantity((long) dbo.get("quantity"));
-//        shopAvailabilityData.setQuota((Long) dbo.get("quota"));
-//        shopAvailabilityData.setCompQuota((Long) dbo.get("compQuota"));
+//        ShopAvailabilityData shopAvailabilityData = new ShopAvailabilityData(id, ShopAvailabilityLevel.GOOD,
+//                                                                             1000, 10L, 5L);
+        ShopAvailabilityData shopAvailabilityData = new ShopAvailabilityData();
+        DBCollection coll = MongoFactory.getCollection(db_name, db_collection);
 
-        // Return shopAvailabilityData object.
+        // Fetching the record object from the mongo database.
+        DBObject where_query = new BasicDBObject();
+        where_query.put("id", id);
+
+        DBObject dbo = coll.findOne(where_query);
+//        System.out.println("Mongo query: " + where_query);
+        shopAvailabilityData.setId((Long) dbo.get("id"));
+        shopAvailabilityData.setLevel(ShopAvailabilityLevel.valueOf(dbo.get("level").toString()));
+        shopAvailabilityData.setQuantity((long) dbo.get("quantity"));
+        shopAvailabilityData.setQuota((Long) dbo.get("quota"));
+        shopAvailabilityData.setCompQuota((Long) dbo.get("compQuota"));
+
+//         Return shopAvailabilityData object.
         return shopAvailabilityData;
     }
 

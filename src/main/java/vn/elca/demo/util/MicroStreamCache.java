@@ -1,9 +1,7 @@
 package vn.elca.demo.util;
 
-import one.microstream.storage.types.StorageManager;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.springframework.stereotype.Service;
-import vn.elca.demo.database.MicroStreamDatabase;
 import vn.elca.demo.database.Root;
 import vn.elca.demo.model.AbstractDto;
 import vn.elca.demo.model.InfoCache;
@@ -32,13 +30,16 @@ public class MicroStreamCache {
 //    private final long MEMORY_USE_FOR_STORED_EACH_OBJECT = 230; // in bytes
 
     private AtomicLong usageMemoryCache = new AtomicLong(0);
+    private float rateOfCleanUp = 0.3f;
 
-//    private static final StorageManager storageManager = MicroStreamDatabase.getInstance();
+    //    private static final StorageManager storageManager = MicroStreamDatabase.getInstance();
     private static final Root root = new Root();
 
     private final ConcurrentHashMap<String, AbstractDto> mapData = root.getMapData();
     private final ConcurrentHashMap<Params, InfoCache> mapInfoCache = root.getMapInfoCache();
     private final ConcurrentHashMap<String, List<Params>> mapInfoData = root.getMapInfoData();
+    private ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+    private Runnable cleanUpRunnable = this::houseKeepingProcess;
 
     public MicroStreamCache() {
 //        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -54,14 +55,6 @@ public class MicroStreamCache {
     private synchronized void updateUsageMemoryCache() {
         this.usageMemoryCache.set(ObjectSizeCalculator.getObjectSize(root));
     }
-
-//    private long getNumberOfObjectInRoot() {
-//        long result = 0;
-//        result += mapData.size();
-//        result += mapInfoCache.size();
-//        result += mapInfoData.size();
-//        return result * 2;
-//    }
 
     public void put(Params params, Object value) {
         DataStructure dataStructure;
@@ -96,27 +89,30 @@ public class MicroStreamCache {
 
         if (dataStructure == DataStructure.SINGLE_OBJECT) {
             AbstractDto temp = (AbstractDto) value;
-            this.putDataIntoCache(params, temp, dataType, dataStructure);
+            this.putDataIntoCache(params, temp, dataType);
             infoCache.getDtoIdMap().put(temp.getId(), null);
 
         } else if (dataStructure == DataStructure.MAP) {
             Map<Long, AbstractDto> tempMap = (Map) value;
             for (Long key : tempMap.keySet()) {
-                this.putDataIntoCache(params, tempMap.get(key), dataType, dataStructure);
+                this.putDataIntoCache(params, tempMap.get(key), dataType);
                 infoCache.getDtoIdMap().put(tempMap.get(key).getId(), key);
             }
 
         } else {
             for (Object dto : (Collection<?>) value) {
                 AbstractDto temp = (AbstractDto) dto;
-                this.putDataIntoCache(params, temp, dataType, dataStructure);
+                this.putDataIntoCache(params, temp, dataType);
                 infoCache.getDtoIdMap().put(temp.getId(), null);
             }
         }
-//        houseKeepingProcess();
+
+        if (Runtime.getRuntime().freeMemory() < MAX_MEMORY_CACHE) {
+//            houseKeepingProcess();
+        }
     }
 
-    private void putDataIntoCache(Params params, AbstractDto dto, DataType dataType, DataStructure dataStructure) {
+    private void putDataIntoCache(Params params, AbstractDto dto, DataType dataType) {
         Long dtoId = dto.getId();
         StringBuilder key = new StringBuilder();
         key.append(dataType.name()).append("-").append(dtoId);
@@ -322,14 +318,19 @@ public class MicroStreamCache {
 
     private void houseKeepingProcess() {
         updateUsageMemoryCache();
-        System.out.println(getUsageMemoryCache());
-        if (getUsageMemoryCache() > MAX_MEMORY_CACHE) {
+        while (getUsageMemoryCache() > MAX_MEMORY_CACHE) {
+            System.out.println(getUsageMemoryCache());
+
+
+            int numberOfRemoveCacheValue = (int) (rateOfCleanUp * mapInfoCache.size());
+
             List<Params> paramsList = mapInfoCache.entrySet()
                                                   .stream()
                                                   .sorted(Comparator.comparingLong(
                                                           e -> e.getValue().getLastTouched())
                                                   )
                                                   .map(Map.Entry::getKey)
+                                                  .limit(numberOfRemoveCacheValue)
                                                   .collect(Collectors.toList());
             for (Params params : paramsList) {
                 InfoCache infoCache = mapInfoCache.get(params);
@@ -351,12 +352,8 @@ public class MicroStreamCache {
 //                storageManager.store(mapInfoCache);
 //                storageManager.store(mapInfoData);
 
-                updateUsageMemoryCache();
-
-                if (getUsageMemoryCache() < MAX_MEMORY_CACHE) {
-                    break;
-                }
             }
+            updateUsageMemoryCache();
         }
     }
 }

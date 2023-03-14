@@ -32,7 +32,8 @@ public class DemoService {
     public ShopAvailabilityData getProductAvailability(Long advantageId, Long ballotId,
                                                        Long composedProductId, long productId) {
         // Xử lí logic lấy ra ShopAvailabilityData
-        ShopAvailabilityData shopAvailabilityData = shopAvailabilityDataService.findShopAvailabilityDataById(productId);
+//        ShopAvailabilityData shopAvailabilityData = shopAvailabilityDataService.findShopAvailabilityDataById(productId);
+        ShopAvailabilityData shopAvailabilityData = new ShopAvailabilityData(productId, ShopAvailabilityLevel.GOOD, 0, null, null);
 //        ShopAvailabilityData shopAvailabilityData2 = shopAvailabilityDataService.findShopAvailabilityDataById(productId + 1);
 //        List<ShopAvailabilityData> list = new ArrayList<>();
 //        list.add(shopAvailabilityData);
@@ -51,23 +52,6 @@ public class DemoService {
         return product;
     }
 
-    @CustomMicrostreamCached
-    public Product getProductDetail(Long productId) {
-        // Xử lí logic trả ra product
-        ShopAvailabilityData shopAvailabilityData1 = new ShopAvailabilityData(1, ShopAvailabilityLevel.GOOD, 0, null, null);
-        ShopAvailabilityData shopAvailabilityData2 = new ShopAvailabilityData(2, ShopAvailabilityLevel.GOOD, 0, null, null);
-        ShopAvailabilityData shopAvailabilityData3 = new ShopAvailabilityData(3, ShopAvailabilityLevel.GOOD, 0, null, null);
-        ShopAvailabilityData shopAvailabilityData4 = new ShopAvailabilityData(4, ShopAvailabilityLevel.GOOD, 0, null, null);
-        List<ShopAvailabilityData> list = new ArrayList<>();
-        list.add(shopAvailabilityData1);
-        list.add(shopAvailabilityData2);
-        list.add(shopAvailabilityData3);
-        list.add(shopAvailabilityData4);
-
-        Product product = new Product(productId, "Product " + productId, productId, productId * 2,
-                                      list);
-        return product;
-    }
 
     @CustomMicrostreamCached
     public List<Product> getListProduct() {
@@ -109,8 +93,17 @@ public class DemoService {
     @CustomMicrostreamCached
     public List<ShopAvailabilityData> getListShopAvailabilityData(long from, long to) {
         List<ShopAvailabilityData> result = new ArrayList<>();
-        for (long i = from; i <= to ; i++) {
+        for (long i = from; i <= to; i++) {
             result.add(shopAvailabilityDataService.findShopAvailabilityDataById(i));
+        }
+        return result;
+    }
+
+    @CustomMicrostreamCached
+    public List<ShopAvailabilityData> getListShopAvailabilityDataCompress(long from, long to) {
+        List<ShopAvailabilityData> result = new ArrayList<>();
+        for (long i = from; i <= to; i++) {
+            result.add(shopAvailabilityDataService.findShopAvailabilityDataCompressById(i));
         }
         return result;
     }
@@ -125,5 +118,24 @@ public class DemoService {
     public ShopAvailabilityData getShopAvailabilityDataById(long id) {
         ShopAvailabilityData result = shopAvailabilityDataService.findShopAvailabilityDataById(id);
         return result;
+    }
+
+    @CustomMicrostreamCached
+    public Product getProductDetail(Long productId) {
+        long shopDataId = productId;
+        // Xử lí logic trả ra product
+        ShopAvailabilityData shopAvailabilityData1 = shopAvailabilityDataService.findShopAvailabilityDataCompressById(shopDataId++);
+        ShopAvailabilityData shopAvailabilityData2 = shopAvailabilityDataService.findShopAvailabilityDataCompressById(shopDataId++);
+        ShopAvailabilityData shopAvailabilityData3 = shopAvailabilityDataService.findShopAvailabilityDataCompressById(shopDataId++);
+        ShopAvailabilityData shopAvailabilityData4 = shopAvailabilityDataService.findShopAvailabilityDataCompressById(shopDataId);
+        List<ShopAvailabilityData> list = new ArrayList<>();
+        list.add(shopAvailabilityData1);
+        list.add(shopAvailabilityData2);
+        list.add(shopAvailabilityData3);
+        list.add(shopAvailabilityData4);
+
+        Product product = new Product(productId, "Product " + productId, 100, 10L,
+                                      list);
+        return product;
     }
 }

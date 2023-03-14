@@ -89,6 +89,11 @@ public class TestController {
     }
 
     // DEMO
+    @GetMapping("getProductById/{id}")
+    public Product getProductById(@PathVariable long id) {
+        Product result = demoService.getProductDetail(id);
+        return result;
+    }
     @GetMapping("getShopAvailabilityDataById/{id}")
     public ShopAvailabilityData getShopAvailabilityDataById(@PathVariable long id) {
         ShopAvailabilityData result = demoService.getShopAvailabilityDataById(id);
@@ -107,7 +112,11 @@ public class TestController {
         return result;
     }
 
-
+    @GetMapping("getListShopAvailabilityDataCompress")
+    public List<ShopAvailabilityData> getListShopAvailabilityDataCompress(@Param("from") long from, @Param("to") long to) {
+        List<ShopAvailabilityData> result = demoService.getListShopAvailabilityDataCompress(from, to);
+        return result;
+    }
 
 
 

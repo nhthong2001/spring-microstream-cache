@@ -31,7 +31,6 @@ public class CacheAroundAspect {
     @Autowired
     MicroStreamCache cached;
 
-
     @Around("@annotation(vn.elca.demo.model.annotation.CustomMicrostreamCached)")
     public Object cacheAroundAdvice(ProceedingJoinPoint proceedingJoinPoint) {
         StringBuffer key = new StringBuffer();
@@ -65,6 +64,12 @@ public class CacheAroundAspect {
 
             cached.put(params, value);
 
+//            Object finalValue = value;
+//            Runnable runnable = () -> {
+//                cached.put(params, finalValue);
+//            };
+//            runnable.run();
+//
             return value;
         } catch (Throwable e) {
             e.printStackTrace();
